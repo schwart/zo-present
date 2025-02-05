@@ -18,3 +18,15 @@ and we can start to put together a plan soon.
 `-- whatsapp-book-generator -> The python "book" generator that uses latex.
 
 
+## Steps
+
+### Initial Parsing
+
+First, we need to parse the chat into a CSV file, so it can be easily be parsed by OTHER tools.
+
+The `chat-parser` project does this. Then it'll output a `chat.csv` file to the `outputs` folder.
+
+### Split into months
+
+Next we, need to split the parsed chat into months.
+
