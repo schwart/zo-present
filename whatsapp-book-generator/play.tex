@@ -1,0 +1,83 @@
+\documentclass{book}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{fontspec}
+\usepackage{hyphenat}
+\usepackage[a5paper, total={5in, 6in}]{geometry}
+
+
+% Set up the font using file paths
+\setmainfont{Helvetica Neue}[
+    Extension = .otf,
+    UprightFont = HelveticaNeue-Regular,
+    BoldFont = HelveticaNeue-Bold,
+    ItalicFont = HelveticaNeue-RegularItalic,
+    Path = /Users/conallmcginty/Downloads/helvetica-neue-master/
+]
+
+% Define colors
+\definecolor{bluebubble}{RGB}{0,122,255}
+\definecolor{greybubble}{RGB}{229,229,234}
+
+% Create chat bubble environments
+\newenvironment{chatbubble}[2]{%
+    \par\noindent
+
+    \def\content{#1}
+    \settowidth{\mylen}{\content}
+
+    \ifdim\mylen<.8\textwidth
+
+    \else
+    \begin{tcolorbox}[
+        arc=2mm,
+        boxrule=0pt,
+        boxsep=0pt,
+        left=2mm,
+        right=2mm,
+        top=2mm,
+        bottom=2mm,
+        colback=#1,
+        coltext=#2,
+        width=0.7\textwidth,
+        before=\ifstrequal{#1}{bluebubble}{\hfill}{},
+    ]
+}{%
+    \end{tcolorbox}
+    \vspace{-1mm}
+}
+
+% Define character dialogues
+\newcommand{\characterOne}[1]{%
+    \begin{chatbubble}{bluebubble}{white}
+        #1
+    \end{chatbubble}
+}
+
+\newcommand{\characterTwo}[1]{%
+    \begin{chatbubble}{greybubble}{black}
+        #1
+    \end{chatbubble}
+}
+
+\begin{document}
+
+\nohyphens{
+
+\characterOne{Hey there! How's it going?}
+
+\characterTwo{Hi! I'm doing well, thanks for asking. How about you?}
+
+\characterOne{I'm great! Just working on this LateX book that I'm making for Zoë.}
+
+\characterTwo{Well THAT sounds fun. Are you going to show updates to your bezzie Steve?}
+
+\characterOne{Ofc ofc ofc. I'm sure he'll probably get bored by the end of it. All these screenshots of pdf files. He ain't got time for that you know?}
+
+\characterTwo{Well I'm sure he'll be happy to provide some constructive feedback. Steve is a man of opinions}
+
+\characterOne{This is very true, this is very true.}
+
+}
+
+\end{document}

@@ -1,0 +1,83 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{emoji}
+
+{% raw %}
+\definecolor{lightgray}{RGB}{240,240,240}
+\definecolor{whatsappgreen}{RGB}{37,211,102}
+
+\newcommand{\leftbubble}[2]{%
+    \begin{tcolorbox}[
+        arc=10pt,
+        boxrule=0pt,
+        colback=lightgray,
+        colframe=lightgray,
+        width=0.7\textwidth,
+        left skip=0pt,
+        right skip=0.3\textwidth
+    ]
+    #1\hfill{\footnotesize #2}
+    \end{tcolorbox}
+}
+
+\newcommand{\rightbubble}[2]{%
+    \begin{tcolorbox}[
+        arc=10pt,
+        boxrule=0pt,
+        colback=whatsappgreen,
+        colframe=whatsappgreen,
+        width=0.7\textwidth,
+        left skip=0.3\textwidth,
+        right skip=0pt
+    ]
+    #1\hfill{\footnotesize #2}
+    \end{tcolorbox}
+}
+
+\newcommand{\leftimage}[2]{%
+    \noindent\begin{minipage}{0.7\textwidth}
+    \includegraphics[width=\linewidth]{#1}
+    \hfill{\footnotesize #2}
+    \end{minipage}\hspace{0.3\textwidth}
+}
+
+\newcommand{\rightimage}[2]{%
+    \noindent\hspace{0.3\textwidth}\begin{minipage}{0.7\textwidth}
+    \includegraphics[width=\linewidth]{#1}
+    \hfill{\footnotesize #2}
+    \end{minipage}
+}
+
+\newcommand{\dateheader}[1]{%
+    \noindent\begin{center}
+    \textbf{#1}
+    \end{center}
+}
+{% endraw %}
+
+\begin{document}
+
+{% for message in messages %}
+{% if message.new_date %}
+    \dateheader{ {{- message.date -}} }
+{% endif %}
+{% if message.type == 'text' %}
+    {% if message.direction == 'left' %}
+        \leftbubble{ {{- message.content -}} }{ {{- message.time -}} }
+    {% else %}
+        \rightbubble{ {{- message.content -}} }{ {{- message.time -}} }
+    {% endif %}
+{% elif message.type == 'image' %}
+    {% if message.direction == 'left' %}
+        \leftimage{ {{- message.content -}} }{ {{- message.time -}} }
+    {% else %}
+        \rightimage{ {{- message.content -}} }{ {{- message.time -}} }
+    {% endif %}
+{% endif %}
+
+{% endfor %}
+
+\end{document}
