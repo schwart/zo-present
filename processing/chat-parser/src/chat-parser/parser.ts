@@ -20,7 +20,7 @@ const regexParserSystem = new RegExp(
   'i',
 );
 const regexAttachment =
-  /^(?:\u200E|\u200F)*(?:<.+:(.+)>|([\w-]+\.\w+)\s[(<].+[)>])/;
+  /^(?:\u200E|\u200F|.)*(?:<.+:(.+)>|([\w-]+\.\w+)\s[(<].+[)>])/;
 
 /**
  * Takes an array of lines and detects the lines that are part of a previous

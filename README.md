@@ -8,15 +8,11 @@ and we can start to put together a plan soon.
 ## Contents
 
 .
-|-- README.md -> This file
-|-- chat -> Where the "raw" chat data lives. Contains `_chat.txt` which is the raw text chat.
-|-- chat-parser -> Takes the raw text chat and transforms it into a CSV.
-|-- in-design -> Any stuff I've made in InDesign for this book.
-|-- latex -> Failed latex files from me trying to use latex to make the book.
-|-- misc-python -> Some csv parsing stuff, uses pandas to try to split things into months?
-|-- outputs -> For any output files that are generated.
-`-- whatsapp-book-generator -> The python "book" generator that uses latex.
-
+|-- README.md
+|-- chat-data -> The "raw" chat data exported from Whatsapp.
+|-- design -> All stuff related to the design of the final book.
+|-- outputs -> Any outputs from processing scripts.
+`-- processing -> Any scripts that process the chat data in some way.
 
 ## Steps
 
