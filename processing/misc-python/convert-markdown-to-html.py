@@ -5,6 +5,7 @@ md = MarkdownIt('commonmark', {'breaks':True,'html':True})
 
 
 input_path = "/Users/conallmcginty/Desktop/zoe-present/outputs/entire_chat.md"
+output_path = "/Users/conallmcginty/Desktop/zoe-present/outputs/entire_chat.html"
 
 with open(input_path, "r") as f:
     text = f.read()
@@ -32,4 +33,4 @@ html_footer = """
 
 full_html = html_head + html_body + html_footer
 
-Path("index.html").write_text(full_html)
+Path(output_path).write_text(full_html)
