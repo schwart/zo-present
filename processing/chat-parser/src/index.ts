@@ -1,12 +1,14 @@
-const whatsapp = require("whatsapp-chat-parser");
-const path = require("node:path");
-const fs = require("node:fs");
-const { 
-	askToOverwriteOutput, 
-	getChatText, 
-	initialiseCsvFile, 
-	createCsvLineFromMessage 
+import * as fs from "node:fs";
+const {
 } = require("./utils");
+import { parseString } from "./chat-parser/index";
+import path from "node:path";
+import {
+	askToOverwriteOutput,
+	getChatText,
+	initialiseCsvFile,
+	createCsvLineFromMessage
+} from "./utils";
 
 
 async function run() {
@@ -19,7 +21,7 @@ async function run() {
 	initialiseCsvFile(outputPath);
 	// parse the chat into messages
 	const inputText = getChatText(chatInputPath);
-	const messages = whatsapp.parseString(inputText, { parseAttachments: true });
+	const messages = parseString(inputText, { parseAttachments: true });
 	console.log(`Number of messages: ${messages.length}`);
 	// convert message to csv line, append it to output file
 	for (const message of messages) {

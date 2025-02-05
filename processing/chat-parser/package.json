@@ -4,11 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "parse": "node ./src/index.js"
+    "build": "tsc",
+    "parse": "node src/index.ts",
+    "colons": "rm -rf dist && npm run build && node ./dist/colons.test.js"
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "whatsapp-chat-parser": "^4.0.1"
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "typescript": "^5.7.3"
   }
 }

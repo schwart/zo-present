@@ -1,17 +1,18 @@
-const readline = require("node:readline/promises");
-const process = require("node:process");
-const fs = require("node:fs");
+import process from "node:process";
+import * as readline from "node:readline/promises";
+import * as fs from "node:fs";
+import {Message} from "./chat-parser";
 
 // checks if the output file passed in already exists
 // if it does, asks the user if they want to overwrite it
-async function askToOverwriteOutput(outputPath) {
+export async function askToOverwriteOutput(outputPath: string) {
 	if (fs.existsSync(outputPath)) {
 		const rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout
 		});
 
-		const answer = await rl.question(`Output path (${outputPath}) already exists, overwrite? (y/n)`); 
+		const answer = await rl.question(`Output path (${outputPath}) already exists, overwrite? (y/n)`);
 		const ans = answer.trim().toLowerCase();
 		switch (ans) {
 			case 'y': {
@@ -24,7 +25,7 @@ async function askToOverwriteOutput(outputPath) {
 				console.log("Not overwriting, exiting...");
 				process.exit(0);
 			}
-			default: {
+			Default: {
 				console.log("Invalid input, exiting...");
 				process.exit(1);
 			}
@@ -39,16 +40,16 @@ async function askToOverwriteOutput(outputPath) {
 // - author
 // - message
 // - type
-function initialiseCsvFile(outputPath) {
+export function initialiseCsvFile(outputPath: string) {
 	fs.appendFileSync(outputPath, "timestamp,author,message,type\n");
 }
 
-function getChatText(chatInputPath) {
+export function getChatText(chatInputPath: string) {
 	console.log(`Using ${chatInputPath}`);
 	return fs.readFileSync(chatInputPath, 'utf8');
 }
 
-function getMessageText(message) {
+export function getMessageText(message: Message) {
 	if (message.attachment) {
 		return message.attachment.fileName;
 	}
@@ -60,7 +61,7 @@ function getMessageText(message) {
 // - author
 // - message
 // - type
-function createCsvLineFromMessage(message) {
+export function createCsvLineFromMessage(message: Message) {
 	if (message.date === undefined) {
 		throw new Error(`Can't parse ${message.message}`);
 	}
@@ -70,11 +71,4 @@ function createCsvLineFromMessage(message) {
 	const type = message.attachment ? "ATTACHMENT" : "MESSAGE";
 	const csvLine = `${timestamp},${author},\"${mess}\",${type}\n`;
 	return csvLine;
-}
-
-module.exports = {
-	askToOverwriteOutput,
-	initialiseCsvFile,
-	getChatText,
-	createCsvLineFromMessage
 }
