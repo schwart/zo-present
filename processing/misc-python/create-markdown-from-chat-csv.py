@@ -59,7 +59,7 @@ def createMarkdownEntryForRow(row):
     header = "# Text"
     author = f"> Author: {row['author']}"
     date_time = f"> Date/time: {row['timestamp']}"
-    message_type = f"Type: {row['type']}"
+    message_type = f"> Type: {row['type']}"
     message = createMarkdownTextForMessageType(row['message'], row['type'], row['attachment_type'])
     # build the text of the message
     return (
@@ -67,7 +67,7 @@ def createMarkdownEntryForRow(row):
         f"{author}\n"
         f"{date_time}\n"
         f"{message_type}\n\n"
-        f"{message}\n"
+        f"{message}\n\n"
     )
 
 def initialise_dataframe(df):
@@ -106,18 +106,47 @@ def sanity_checks(df):
             print(f)
         raise Exception("There are some attachments that we can't find!")
 
+def create_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
 
 input_file = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
 output_file = "/Users/conallmcginty/Desktop/zoe-present/outputs/entire_chat.md"
+output_root = "/Users/conallmcginty/Desktop/zoe-present/outputs/markdown"
+
+create_dir(output_root)
 
 df = load_dataframe(input_file)
 df = initialise_dataframe(df)
 sanity_checks(df)
 
-markdown_elements = []
-for index, row in df.iterrows():
-    markdown_elements.append(createMarkdownEntryForRow(row))
+start_year = 2023
+end_year = 2024
+for year in range(start_year, end_year + 1):
+    for month in range(1, 12 + 1):
+        rows_for_month = get_rows_for_month(df, year, month)
+        if rows_for_month.empty:
+            continue
+        month_name = calendar.month_name[month].lower()
+        # create output directory for this month
+        output_dir = os.path.join(output_root, f"{year}-{month}-{month_name}")
+        create_dir(output_dir)
+        # create markdown elements
+        markdown_output_path = os.path.join(output_dir, f"{year}-{month_name}.md")
+        markdown_elements = []
+        for index, row in rows_for_month.iterrows():
+            markdown_elements.append(createMarkdownEntryForRow(row))
+        # write them to the output path
+        with open(markdown_output_path, "w") as f:
+            for el in markdown_elements:
+                f.write(el)
+        # print when we're finished that month
+        print(f"{year} - {month_name} - {markdown_output_path}")
 
-with open(output_file, "w") as f:
-    for el in markdown_elements:
-        f.write(el)
+#
+# markdown_elements = []
+# for index, row in df.iterrows():
+#     markdown_elements.append(createMarkdownEntryForRow(row))
+#
