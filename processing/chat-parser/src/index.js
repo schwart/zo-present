@@ -11,9 +11,9 @@ const {
 
 async function run() {
 	// get the input path
-	const chatInputPath = path.resolve("../chat/_chat.txt");
+	const chatInputPath = path.resolve("../../chat-data/_chat.txt");
 	// get the ouptut path
-	const outputPath = path.resolve("../outputs/chat.csv");
+	const outputPath = path.resolve("../../outputs/chat.csv");
 	// check if the output path should be overwritten
 	await askToOverwriteOutput(outputPath);
 	initialiseCsvFile(outputPath);
