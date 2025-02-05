@@ -52,14 +52,72 @@ def get_rows_for_day(df, start_year, start_month, start_day):
     results = df.loc[mask]
     return results
 
-file_path = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
-df = load_dataframe(file_path)
-# fix file paths so they're absolute
-is_attachment_mask = df["type"] == "ATTACHMENT"
-df.loc[is_attachment_mask, "message"] = df.loc[is_attachment_mask].apply(get_attachment_absolute_path, axis=1)
+def createMarkdownTextForMessageType(message, message_type, attachment_type):
+    return message
 
-# need to work out the type of attachments based on their file name
-df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "PHOTO" in row["message"], axis=1), "attachment_type"] = "PHOTO"
-df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "AUDIO" in row["message"], axis=1), "attachment_type"] = "AUDIO"
-df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "STICKER" in row["message"], axis=1), "attachment_type"] = "STICKER"
+def createMarkdownEntryForRow(row):
+    header = "# Text"
+    author = f"> Author: {row['author']}"
+    date_time = f"> Date/time: {row['timestamp']}"
+    message_type = f"Type: {row['type']}"
+    message = createMarkdownTextForMessageType(row['message'], row['type'], row['attachment_type'])
+    # build the text of the message
+    return (
+        f"{header}\n"
+        f"{author}\n"
+        f"{date_time}\n"
+        f"{message_type}\n\n"
+        f"{message}\n"
+    )
 
+def initialise_dataframe(df):
+    # set file paths so they're absolute
+    is_attachment_mask = df["type"] == "ATTACHMENT"
+    df.loc[is_attachment_mask, "message"] = df.loc[is_attachment_mask].apply(get_attachment_absolute_path, axis=1)
+
+    # need to work out the type of attachments based on their file name
+    # photo
+    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "PHOTO" in row["message"], axis=1), "attachment_type"] = "PHOTO"
+    # audio
+    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "AUDIO" in row["message"], axis=1), "attachment_type"] = "AUDIO"
+    # sticker
+    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "STICKER" in row["message"], axis=1), "attachment_type"] = "STICKER"
+    # video
+    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "VIDEO" in row["message"], axis=1), "attachment_type"] = "VIDEO"
+    # gif
+    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "GIF" in row["message"], axis=1), "attachment_type"] = "GIF"
+    # tiff
+    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and ".tiff" in row["message"], axis=1), "attachment_type"] = "TIFF_PHOTO"
+    return df
+
+def sanity_checks(df):
+    # check that we don't have any attachments with no attachment type assigned
+    all_attachments_with_no_type = df[(df["attachment_type"].isnull()) & (df["type"] == "ATTACHMENT")]["message"]
+    len_all_attachments_with_no_type = len(all_attachments_with_no_type)
+    print(f"Length of all attachments with no type: {len_all_attachments_with_no_type}")
+    if len_all_attachments_with_no_type > 0:
+        raise Exception("There are some attachments with no type!")
+
+    # check that there's no files that we can't find
+    len_files_we_cant_find = len(files_we_cant_find)
+    print(f"Length of all files we can't find: {len_files_we_cant_find}")
+    if len_files_we_cant_find > 0:
+        for f in files_we_cant_find:
+            print(f)
+        raise Exception("There are some attachments that we can't find!")
+
+
+input_file = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
+output_file = "/Users/conallmcginty/Desktop/zoe-present/outputs/entire_chat.md"
+
+df = load_dataframe(input_file)
+df = initialise_dataframe(df)
+sanity_checks(df)
+
+markdown_elements = []
+for index, row in df.iterrows():
+    markdown_elements.append(createMarkdownEntryForRow(row))
+
+with open(output_file, "w") as f:
+    for el in markdown_elements:
+        f.write(el)
