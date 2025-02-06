@@ -9,7 +9,6 @@ def render_markdown_to_html(input_path, output_path):
     with open(input_path, "r") as f:
         text = f.read()
 
-    tokens = md.parse(text)
     html_body = md.render(text)
 
     html_head = """
@@ -17,8 +16,8 @@ def render_markdown_to_html(input_path, output_path):
     <html>
 
     <head>
-      <meta charset="UTF-8">
-      <title>Page Title</title>
+        <meta charset="UTF-8">
+        <title>Page Title</title>
     </head>
 
     <body style="font-family: sans-serif">
