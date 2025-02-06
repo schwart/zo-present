@@ -1,36 +1,52 @@
 from markdown_it import MarkdownIt
 from pathlib import Path
+import fnmatch
+import os
 
 md = MarkdownIt('commonmark', {'breaks':True,'html':True})
 
+def render_markdown_to_html(input_path, output_path):
+    with open(input_path, "r") as f:
+        text = f.read()
 
-input_path = "/Users/conallmcginty/Desktop/zoe-present/outputs/entire_chat.md"
-output_path = "/Users/conallmcginty/Desktop/zoe-present/outputs/entire_chat.html"
+    tokens = md.parse(text)
+    html_body = md.render(text)
 
-with open(input_path, "r") as f:
-    text = f.read()
+    html_head = """
+    <!DOCTYPE html>
+    <html>
 
-tokens = md.parse(text)
-html_body = md.render(text)
+    <head>
+      <meta charset="UTF-8">
+      <title>Page Title</title>
+    </head>
 
-html_head = """
-<!DOCTYPE html>
-<html>
+    <body style="font-family: sans-serif">
+    """
 
-<head>
-  <meta charset="UTF-8">
-  <title>Page Title</title>
-</head>
+    html_footer = """
+    </body>
 
-<body style="font-family: sans-serif">
-"""
+    </html>
+    """
 
-html_footer = """
-</body>
+    full_html = html_head + html_body + html_footer
 
-</html>
-"""
+    Path(output_path).write_text(full_html)
 
-full_html = html_head + html_body + html_footer
+# returns a list of (input_path, output_path) tuples
+def get_all_markdown_files_recursive(input_path):
+    paths = []
+    for dirpath, dirnames, filenames in os.walk(input_path):
+        for filename in fnmatch.filter(filenames, "*.md"):
+            input_path = os.path.join(dirpath, filename)
+            output_path = os.path.join(dirpath, filename.replace(".md", ".html"))
+            paths.append((input_path, output_path))
+    return paths
 
-Path(output_path).write_text(full_html)
+input_path = "/Users/conallmcginty/Desktop/zoe-present/outputs/"
+
+# now we have all the (dirpath, full_path)'s set up
+for input_path, output_path in get_all_markdown_files_recursive(input_path):
+    print(f"Rendering {input_path}")
+    render_markdown_to_html(input_path, output_path)

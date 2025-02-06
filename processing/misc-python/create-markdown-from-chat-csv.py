@@ -1,29 +1,10 @@
-import pandas as pd
 import os
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 import calendar
+from utils import attachments
+from utils import dataframe
 
-def load_dataframe(file_path):
-    # will have the following columns
-    # timestamp (initially a string type)
-    # author
-    # message (if type column is "ATTACHMENT", this will be the path to an image)
-    # type (either MESSAGE or ATTACHMENT)
-    df = pd.read_csv(file_path, header=0, names=["timestamp", "author", "message", "type"])
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    return df
-
-files_we_cant_find = []
-
-def get_attachment_absolute_path(row):
-    prefix = "/Users/conallmcginty/Desktop/zoe-present/chat-data/"
-    out_path = os.path.join(prefix, row["message"])
-    if os.path.exists(out_path) == False:
-        print(row)
-        files_we_cant_find.append(out_path)
-        # raise Exception(f"{out_path} does not exist")
-    return out_path
 
 def get_rows_for_month(df, start_year, start_month):
     '''
@@ -53,58 +34,36 @@ def get_rows_for_day(df, start_year, start_month, start_day):
     return results
 
 def createMarkdownTextForMessageType(message, message_type, attachment_type):
-    return message
+    if message_type == "ATTACHMENT":
+        return attachments.message_for_attachment_type(message, attachment_type)
+    else:
+        return message
+
+def attachment_type_text(row):
+    if row["type"] == "ATTACHMENT":
+        attachment_type = f"> Attachment Type: {row['attachment_type']}"
+        file_name = os.path.basename(row["message"])
+        file_name = f"> File Name: {file_name}"
+        return f"{attachment_type}\n{file_name}"
+    else:
+        return ""
 
 def createMarkdownEntryForRow(row):
     header = "# Text"
     author = f"> Author: {row['author']}"
     date_time = f"> Date/time: {row['timestamp']}"
     message_type = f"> Type: {row['type']}"
+    attachment_type = attachment_type_text(row)
     message = createMarkdownTextForMessageType(row['message'], row['type'], row['attachment_type'])
     # build the text of the message
     return (
         f"{header}\n"
         f"{author}\n"
         f"{date_time}\n"
-        f"{message_type}\n\n"
+        f"{message_type}\n"
+        f"{attachment_type}\n\n"
         f"{message}\n\n"
     )
-
-def initialise_dataframe(df):
-    # set file paths so they're absolute
-    is_attachment_mask = df["type"] == "ATTACHMENT"
-    df.loc[is_attachment_mask, "message"] = df.loc[is_attachment_mask].apply(get_attachment_absolute_path, axis=1)
-
-    # need to work out the type of attachments based on their file name
-    # photo
-    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "PHOTO" in row["message"], axis=1), "attachment_type"] = "PHOTO"
-    # audio
-    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "AUDIO" in row["message"], axis=1), "attachment_type"] = "AUDIO"
-    # sticker
-    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "STICKER" in row["message"], axis=1), "attachment_type"] = "STICKER"
-    # video
-    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "VIDEO" in row["message"], axis=1), "attachment_type"] = "VIDEO"
-    # gif
-    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and "GIF" in row["message"], axis=1), "attachment_type"] = "GIF"
-    # tiff
-    df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and ".tiff" in row["message"], axis=1), "attachment_type"] = "TIFF_PHOTO"
-    return df
-
-def sanity_checks(df):
-    # check that we don't have any attachments with no attachment type assigned
-    all_attachments_with_no_type = df[(df["attachment_type"].isnull()) & (df["type"] == "ATTACHMENT")]["message"]
-    len_all_attachments_with_no_type = len(all_attachments_with_no_type)
-    print(f"Length of all attachments with no type: {len_all_attachments_with_no_type}")
-    if len_all_attachments_with_no_type > 0:
-        raise Exception("There are some attachments with no type!")
-
-    # check that there's no files that we can't find
-    len_files_we_cant_find = len(files_we_cant_find)
-    print(f"Length of all files we can't find: {len_files_we_cant_find}")
-    if len_files_we_cant_find > 0:
-        for f in files_we_cant_find:
-            print(f)
-        raise Exception("There are some attachments that we can't find!")
 
 def create_dir(directory):
     if not os.path.exists(directory):
@@ -118,9 +77,9 @@ output_root = "/Users/conallmcginty/Desktop/zoe-present/outputs/markdown"
 
 create_dir(output_root)
 
-df = load_dataframe(input_file)
-df = initialise_dataframe(df)
-sanity_checks(df)
+df = dataframe.load_dataframe(input_file)
+df = dataframe.initialise_dataframe(df)
+dataframe.sanity_checks(df)
 
 start_year = 2023
 end_year = 2024
@@ -131,10 +90,12 @@ for year in range(start_year, end_year + 1):
             continue
         month_name = calendar.month_name[month].lower()
         # create output directory for this month
-        output_dir = os.path.join(output_root, f"{year}-{month}-{month_name}")
+        month_string = str(month).zfill(2)
+        formatted_date = f"{year}-{month_string}-{month_name}"
+        output_dir = os.path.join(output_root, formatted_date)
         create_dir(output_dir)
         # create markdown elements
-        markdown_output_path = os.path.join(output_dir, f"{year}-{month_name}.md")
+        markdown_output_path = os.path.join(output_dir, f"{formatted_date}.md")
         markdown_elements = []
         for index, row in rows_for_month.iterrows():
             markdown_elements.append(createMarkdownEntryForRow(row))
@@ -142,11 +103,7 @@ for year in range(start_year, end_year + 1):
         with open(markdown_output_path, "w") as f:
             for el in markdown_elements:
                 f.write(el)
+        attachments.link_attachments_to_output_directory(rows_for_month, output_dir)
         # print when we're finished that month
         print(f"{year} - {month_name} - {markdown_output_path}")
 
-#
-# markdown_elements = []
-# for index, row in df.iterrows():
-#     markdown_elements.append(createMarkdownEntryForRow(row))
-#
