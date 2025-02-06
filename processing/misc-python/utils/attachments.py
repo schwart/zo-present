@@ -14,15 +14,28 @@ def link_attachments_to_output_directory(rows, output_dir):
         output_path = os.path.join(content_dir, file_name)
         os.symlink(input_path, output_path)
 
-def image_attachment(message):
+def image_attachment(row):
+    message = row["message"]
     filename = os.path.basename(message)
     filepath = os.path.join(content_dir_name, filename)
-    return f'<img src="{filepath}" width="300">'
+    # include a description of the image if there is one
+    image_element = '<img src="{filepath}" width="300">'
+    if "image_description" in row and str(row["image_description"]) != "nan":
+        description = row["image_description"]
+        image_description = f"> Image Description: {description}"
+        return f'{image_element}\n\n{image_description}'
+    return image_element
 
-def audio_attachment(message):
+def audio_attachment(row):
+    message = row["message"]
     filename = os.path.basename(message)
     filepath = os.path.join(content_dir_name, filename)
-    return f'<audio controls width="300" src="{filepath}"></audio>'
+    audio_element = f'<audio controls width="300" src="{filepath}"></audio>'
+    if "audio_transcript" in row and str(row["audio_transcript"]) != "nan":
+        description = row["audio_transcript"]
+        audio_transcript = f"> Audio Transcription: {description}"
+        return f'{audio_element}\n\n{audio_transcript}'
+    return audio_element
 
 def video_attachment(message):
     filename = os.path.basename(message)
@@ -38,7 +51,7 @@ def is_audio(attachment_type):
 def is_video(attachment_type):
     return attachment_type == "VIDEO"
 
-def message_for_attachment_type(message, attachment_type):
+def message_for_attachment_type(row):
     # valid attachment types
     # PHOTO
     # GIF
@@ -46,10 +59,12 @@ def message_for_attachment_type(message, attachment_type):
     # TIFF_PHOTO
     # VIDEO
     # AUDIO
+    message = row["message"]
+    attachment_type = row["attachment_type"]
     if is_image(attachment_type):
-        return image_attachment(message)
+        return image_attachment(row)
     if is_audio(attachment_type):
-        return audio_attachment(message)
+        return audio_attachment(row)
     if is_video(attachment_type):
         return video_attachment(message)
 

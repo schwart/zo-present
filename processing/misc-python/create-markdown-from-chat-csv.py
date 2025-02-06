@@ -33,11 +33,11 @@ def get_rows_for_day(df, start_year, start_month, start_day):
     results = df.loc[mask]
     return results
 
-def createMarkdownTextForMessageType(message, message_type, attachment_type):
-    if message_type == "ATTACHMENT":
-        return attachments.message_for_attachment_type(message, attachment_type)
+def createMarkdownTextForMessageType(row):
+    if row["type"] == "ATTACHMENT":
+        return attachments.message_for_attachment_type(row)
     else:
-        return message
+        return row["message"]
 
 def attachment_type_text(row):
     if row["type"] == "ATTACHMENT":
@@ -54,7 +54,7 @@ def createMarkdownEntryForRow(row):
     date_time = f"> Date/time: {row['timestamp']}"
     message_type = f"> Type: {row['type']}"
     attachment_type = attachment_type_text(row)
-    message = createMarkdownTextForMessageType(row['message'], row['type'], row['attachment_type'])
+    message = createMarkdownTextForMessageType(row)
     # build the text of the message
     return (
         f"{header}\n"
@@ -72,7 +72,6 @@ def create_dir(directory):
 
 
 input_file = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
-output_file = "/Users/conallmcginty/Desktop/zoe-present/outputs/entire_chat.md"
 output_root = "/Users/conallmcginty/Desktop/zoe-present/outputs/markdown"
 
 create_dir(output_root)
