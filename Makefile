@@ -31,6 +31,10 @@ $(HTML_MARKER): $(MARKDOWN_MARKER)
 
 html: $(HTML_MARKER)
 
-clean:
+clean-all:
 	echo "Cleaning $(OUTPUT_DIRECTORY)"
 	rm -rf $(OUTPUT_DIRECTORY)/*
+
+clean-md:
+	echo "Cleaning all .md and .html files"
+	rm -rf $(MARKDOWN_DIRECTORY)

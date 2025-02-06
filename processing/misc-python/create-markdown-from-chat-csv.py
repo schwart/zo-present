@@ -33,9 +33,9 @@ def get_rows_for_day(df, start_year, start_month, start_day):
     results = df.loc[mask]
     return results
 
-def createMarkdownTextForMessageType(row):
+def format_markdown_message(row, human):
     if row["type"] == "ATTACHMENT":
-        return attachments.message_for_attachment_type(row)
+        return attachments.message_for_attachment_type(row, human)
     else:
         return row["message"]
 
@@ -48,26 +48,35 @@ def attachment_type_text(row):
     else:
         return ""
 
-def createMarkdownEntryForRow(row):
+def create_markdown_entry(row, human):
     header = "# Text"
     author = f"> Author: {row['author']}"
     date_time = f"> Date/time: {row['timestamp']}"
     message_type = f"> Type: {row['type']}"
     attachment_type = attachment_type_text(row)
-    message = createMarkdownTextForMessageType(row)
+    message = format_markdown_message(row, human)
     # build the text of the message
     return (
         f"{header}\n"
         f"{author}\n"
         f"{date_time}\n"
         f"{message_type}\n"
-        f"{attachment_type}\n\n"
+        f"{attachment_type}\n"
         f"{message}\n\n"
     )
 
 def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+def create_markdown(markdown_output_path, human):
+    markdown_elements = []
+    for _, row in rows_for_month.iterrows():
+        markdown_elements.append(create_markdown_entry(row, human))
+    # write them to the output path
+    with open(markdown_output_path, "w") as f:
+        for el in markdown_elements:
+            f.write(el)
 
 
 
@@ -93,16 +102,14 @@ for year in range(start_year, end_year + 1):
         formatted_date = f"{year}-{month_string}-{month_name}"
         output_dir = os.path.join(output_root, formatted_date)
         create_dir(output_dir)
-        # create markdown elements
-        markdown_output_path = os.path.join(output_dir, f"{formatted_date}.md")
-        markdown_elements = []
-        for index, row in rows_for_month.iterrows():
-            markdown_elements.append(createMarkdownEntryForRow(row))
-        # write them to the output path
-        with open(markdown_output_path, "w") as f:
-            for el in markdown_elements:
-                f.write(el)
+
+        # create markdown for "humans" first
+        human_markdown_output_path = os.path.join(output_dir, f"{formatted_date}.human.md")
+        create_markdown(human_markdown_output_path, human=True)
+        # create markdown for robots
+        robot_markdown_output_path = os.path.join(output_dir, f"{formatted_date}.robot.md")
+        create_markdown(robot_markdown_output_path, human=False)
         attachments.link_attachments_to_output_directory(rows_for_month, output_dir)
         # print when we're finished that month
-        print(f"{year} - {month_name} - {markdown_output_path}")
+        print(f"{year} - {month_name} - {human_markdown_output_path}")
 

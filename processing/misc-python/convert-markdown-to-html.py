@@ -37,8 +37,8 @@ def render_markdown_to_html(input_path, output_path):
 # returns a list of (input_path, output_path) tuples
 def get_all_markdown_files_recursive(input_path):
     paths = []
-    for dirpath, dirnames, filenames in os.walk(input_path):
-        for filename in fnmatch.filter(filenames, "*.md"):
+    for dirpath, _, filenames in os.walk(input_path):
+        for filename in fnmatch.filter(filenames, "*.human.md"):
             input_path = os.path.join(dirpath, filename)
             output_path = os.path.join(dirpath, filename.replace(".md", ".html"))
             paths.append((input_path, output_path))
