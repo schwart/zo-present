@@ -25,7 +25,7 @@ for index, row in audio.iterrows():
     # write the df back to the csv now
     # means we don't have to re-do this file again
     # as the next time we run the script it won't be processed
-    df.to_csv(input_csv, index = False, date_format='%Y-%m-%dT%H:%M:%SZ')
+    dataframe.to_csv(df, input_csv)
     print(f"Finished processing: {input_file}")
 
 

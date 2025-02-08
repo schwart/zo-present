@@ -20,6 +20,9 @@ def load_dataframe(file_path):
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df
 
+def to_csv(df, output_path):
+    df.to_csv(output_path, index = False, date_format='%Y-%m-%dT%H:%M:%SZ')
+
 def initialise_dataframe(df):
     # set file paths so they're absolute
     is_attachment_mask = df["type"] == "ATTACHMENT"
@@ -40,12 +43,15 @@ def initialise_dataframe(df):
     df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and ".tiff" in row["message"], axis=1), "attachment_type"] = "TIFF_PHOTO"
     return df
 
-def sanity_checks(df, input_path):
+def get_all_attachments_with_no_attachment_type(df):
     # check that we don't have any attachments with no attachment type assigned
     attachments = df["type"] == "ATTACHMENT"
     attachment_isnt_null = df["attachment_type"].isnull()
-    all_attachments_with_no_type = df[attachments & attachment_isnt_null]
-    attachment_paths = all_attachments_with_no_type["message"]
+    return df[attachments & attachment_isnt_null]
+
+def ask_to_remove_attachments_with_no_type(df, input_path):
+    attachments_with_no_type = get_all_attachments_with_no_attachment_type(df)
+    attachment_paths = attachments_with_no_type["message"]
     len_all_attachments_with_no_type = len(attachment_paths)
     print(f"Number of attachments with no type: {len_all_attachments_with_no_type}")
     if len_all_attachments_with_no_type > 0:
@@ -55,7 +61,10 @@ def sanity_checks(df, input_path):
     if response.lower() == 'y':
         # remove them from the data frame
         # save the csv back
-        df.drop(all_attachments_with_no_type.index)
-        df.to_csv(input_path, index = False, date_format='%Y-%m-%dT%H:%M:%SZ')
+        df.drop(attachments_with_no_type.index)
+        to_csv(df, input_path)
         return
     raise Exception("There are some attachments with no type!")
+
+def sanity_checks(df, input_path):
+    ask_to_remove_attachments_with_no_type(df, input_path)
