@@ -1,0 +1,8 @@
+BEGIN:VCARD
+VERSION:3.0
+N:;Mum;;;
+FN:Mum
+BDAY;value=date:1968-03-28
+TEL;waid=447527422973:+44 7527 422973
+EMAIL;type=INTERNET;type=WORK:aishers@me.com
+END:VCARD
