@@ -97,7 +97,7 @@ output_root = "/Users/conallmcginty/Desktop/zoe-present/outputs/markdown"
 
 create_dir(output_root)
 
-df = dataframe.load_dataframe(input_file)
+df = dataframe.from_csv(input_file)
 df = dataframe.initialise_dataframe(df)
 dataframe.sanity_checks(df, input_file)
 

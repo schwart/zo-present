@@ -13,7 +13,7 @@ print("Finished loading model")
 
 input_csv = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
 
-df = dataframe.load_dataframe(input_csv)
+df = dataframe.from_csv(input_csv)
 df = dataframe.initialise_dataframe(df)
 audio = attachments.get_all_audio_attachments(df)
 

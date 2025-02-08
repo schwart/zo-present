@@ -1,4 +1,5 @@
 import pandas as pd
+import sqlite3
 import os
 
 def get_attachment_absolute_path(row):
@@ -9,19 +10,33 @@ def get_attachment_absolute_path(row):
         raise Exception(f"{out_path} does not exist")
     return out_path
 
-def load_dataframe(file_path):
+def symlink_attachment_path_to_folder(input_path, output_dir):
+    filename = os.path.basename(input_path)
+    output_path = os.path.join(output_dir, filename)
+    os.symlink(input_path, output_path)
+
+def from_csv(input_path):
     # will have the following columns
     # timestamp (initially a string type)
     # author
     # message (if type column is "ATTACHMENT", this will be the path to an image)
     # type (either MESSAGE or ATTACHMENT)
     # transcript (the whisper transcript of the audio file)
-    df = pd.read_csv(file_path, header=0)
+    df = pd.read_csv(input_path, header=0)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df
 
 def to_csv(df, output_path):
     df.to_csv(output_path, index = False, date_format='%Y-%m-%dT%H:%M:%SZ')
+
+def to_sqlite(df, output_path):
+    with sqlite3.connect(output_path) as connection:
+        df.to_sql("dataframe", connection, if_exists="replace")
+
+def from_sqlite(input_path):
+    with sqlite3.connect(input_path) as connection:
+        df = pd.read_sql_query("SELECT * from dataframe", connection, index_col="index")
+        return df
 
 def initialise_dataframe(df):
     # set file paths so they're absolute
@@ -57,14 +72,24 @@ def ask_to_remove_attachments_with_no_type(df, input_path):
     if len_all_attachments_with_no_type > 0:
         for attachment in attachment_paths:
             print(attachment)
-    response = input("Above are the attachments that we're going to skip, is that fine?")
-    if response.lower() == 'y':
-        # remove them from the data frame
-        # save the csv back
-        df.drop(attachments_with_no_type.index)
-        to_csv(df, input_path)
-        return
-    raise Exception("There are some attachments with no type!")
+        response = input("Above are the attachments that we're going to skip, is that fine?")
+        if response.lower() == 'y':
+            # remove them from the data frame
+            # save the csv back
+            dropped = df.drop(attachments_with_no_type.index)
+            to_csv(dropped, input_path)
+            return dropped
+        raise Exception("There are some attachments with no type!")
+    return df
+
+def remove_any_blank_author_rows(df, input_path):
+    no_author = df.loc[df["author"].isnull()]
+    print(f"Number of blank author rows: {len(no_author.index)}")
+    dropped = df.drop(no_author.index)
+    to_csv(dropped, input_path)
+    return dropped
 
 def sanity_checks(df, input_path):
-    ask_to_remove_attachments_with_no_type(df, input_path)
+    df = ask_to_remove_attachments_with_no_type(df, input_path)
+    df = remove_any_blank_author_rows(df, input_path)
+    return df

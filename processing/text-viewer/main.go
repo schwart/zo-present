@@ -8,38 +8,44 @@ import (
     "log"
     "net/http"
     "strconv"
-
+    "time"
+    _ "embed"
     _ "github.com/mattn/go-sqlite3"
 )
 
 // Row represents a single row from the dataframe table.
 type Row struct {
-    Index        int
+    Index     int
     Timestamp string
     Author    string
     Message   string
+    Type    string
+    AttachmentType    string
+    ImageDescription    string
+    AudioTranscript    string
     Status    string
 }
 
-// db is a global pointer to the database connection
+// MonthOption holds data for each distinct month in the DB
+type MonthOption struct {
+    YearMonth string // e.g. "2023-09"
+    Label     string // e.g. "September 2023"
+}
+
 var db *sql.DB
 
 func main() {
     var err error
-
-    // Open (or create) the SQLite database file
     db, err = sql.Open("sqlite3", "./mydb.sqlite")
     if err != nil {
         log.Fatal("Failed to open database:", err)
     }
     defer db.Close()
 
-    // Ensure the database is accessible
     if err = db.Ping(); err != nil {
         log.Fatal("Failed to ping database:", err)
     }
 
-    // Define handlers
     http.HandleFunc("/", indexHandler)
     http.HandleFunc("/mark-seen", markSeenHandler)
 
@@ -47,10 +53,59 @@ func main() {
     log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-// indexHandler fetches all rows from the dataframe table and displays them
+//go:embed template.tmpl.html
+var tmpl string
+
+// indexHandler fetches all rows from the dataframe table and displays them.
+// Optionally filters by month if a "?month=YYYY-MM" query param is provided.
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-    // Query all rows
-    rows, err := db.Query(`SELECT "index", "timestamp", "author", "message", "status" FROM dataframe ORDER BY "index"`)
+    // 1. Get the distinct months (for the dropdown)
+    months, err := getDistinctMonths()
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // 2. Check if a month filter is provided
+    selectedMonth := r.URL.Query().Get("month") // e.g. "2023-09"
+
+    // 3. Retrieve rows (filtered by month if provided)
+    var rows *sql.Rows
+    if selectedMonth != "" {
+        query := `
+            SELECT "index",
+                   "timestamp",
+                   "author",
+                   "message",
+                   "type",
+                   COALESCE("attachment_type", '') AS "attachment_type",
+                   COALESCE("image_description", '') AS "image_description",
+                   COALESCE("audio_transcript", '') AS "audio_transcript",
+                   "status"
+            FROM dataframe
+            WHERE strftime('%Y-%m', "timestamp") = ?
+            ORDER BY "index"
+        `
+        rows, err = db.Query(query, selectedMonth)
+    // ...
+    } else {
+        query := `
+            SELECT "index",
+                   "timestamp",
+                   "author",
+                   "message",
+                   "type",
+                   COALESCE("attachment_type", '') AS "attachment_type",
+                   COALESCE("image_description", '') AS "image_description",
+                   COALESCE("audio_transcript", '') AS "audio_transcript",
+                   "status"
+            FROM dataframe
+            ORDER BY "index"
+        `
+        rows, err = db.Query(query)
+        // ...
+    }
+
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
@@ -58,89 +113,42 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     defer rows.Close()
 
     var data []Row
-
-    // Iterate over rows and scan into our Row struct
     for rows.Next() {
         var rowObj Row
-        err := rows.Scan(&rowObj.Index, &rowObj.Timestamp, &rowObj.Author, &rowObj.Message, &rowObj.Status)
-        if err != nil {
+        if err := rows.Scan(&rowObj.Index, &rowObj.Timestamp, &rowObj.Author, &rowObj.Message, &rowObj.Type, &rowObj.AttachmentType, &rowObj.ImageDescription, &rowObj.AudioTranscript, &rowObj.Status); err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return
         }
         data = append(data, rowObj)
     }
 
-    // Use an inline template for brevity; you can use template.ParseFiles(...) instead
-        tmpl := `
-<html>
-<head>
-    <title>Dataframe Status</title>
-    <script>
-        // This function is called when the "Mark as Seen" button is clicked
-        // It sends a POST request to /mark-seen and, if successful,
-        // updates the DOM so we don't need to reload the page.
-        function markAsSeen(rowId) {
-            fetch('/mark-seen?id=' + rowId, {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update the DOM to reflect the new status
-                    document.getElementById('status-' + rowId).textContent = 'seen';
-                    // Disable the button
-                    document.getElementById('seen-btn-' + rowId).disabled = true;
-                    document.getElementById('seen-btn-' + rowId).textContent = "Already Seen";
-                } else {
-                    alert('Failed to mark as seen: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error marking as seen:', error);
-                alert('Error marking as seen');
-            });
-        }
-    </script>
-</head>
-<body>
-    <h1>Dataframe Rows</h1>
-    {{range .}}
-        <div style="margin-bottom: 20px;">
-            <p>
-                <strong>ID:</strong> {{.Index}}<br>
-                <strong>Timestamp:</strong> {{.Timestamp}}<br>
-                <strong>Author:</strong> {{.Author}}<br>
-                <strong>Message:</strong> {{.Message}}<br>
-                <strong>Status:</strong> <span id="status-{{.Index}}">{{.Status}}</span>
-            </p>
-            {{if eq .Status "seen"}}
-                <!-- If it's already seen, disable the button -->
-                <button id="seen-btn-{{.Index}}" disabled>Already Seen</button>
-            {{else}}
-                <!-- Otherwise, attach the onClick handler -->
-                <button id="seen-btn-{{.Index}}" onclick="markAsSeen({{.Index}})">
-                    Mark as Seen
-                </button>
-            {{end}}
-        </div>
-    {{end}}
-</body>
-</html>`
 
-    // Parse and execute the template
+    // 5. Prepare data for the template
+    type TemplateData struct {
+        Months        []MonthOption
+        SelectedMonth string
+        Data          []Row
+    }
+    templateData := TemplateData{
+        Months:        months,
+        SelectedMonth: selectedMonth,
+        Data:          data,
+    }
+
+    // 6. Render template
     t := template.Must(template.New("index").Parse(tmpl))
-    if err := t.Execute(w, data); err != nil {
+    if err := t.Execute(w, templateData); err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
 }
 
+// markSeenHandler updates one row's status to "seen".
 func markSeenHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
         http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
         return
     }
 
-    // Retrieve 'id' via URL query param or form (we're using query here)
     rowID := r.URL.Query().Get("id")
     if rowID == "" {
         http.Error(w, "Missing id parameter", http.StatusBadRequest)
@@ -152,10 +160,8 @@ func markSeenHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Update the database
     _, err = db.Exec(`UPDATE dataframe SET status = 'seen' WHERE "index" = ?`, idInt)
     if err != nil {
-        // Return JSON error
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(map[string]interface{}{
             "success": false,
@@ -164,8 +170,42 @@ func markSeenHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Return JSON success
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+// getDistinctMonths returns a list of distinct months from "timestamp" in YYYY-MM format,
+// sorted, and also creates a user-friendly label (e.g. "September 2023").
+func getDistinctMonths() ([]MonthOption, error) {
+    rows, err := db.Query(`
+        SELECT DISTINCT strftime('%Y-%m', "timestamp") AS yearmonth
+        FROM dataframe
+        WHERE "timestamp" IS NOT NULL
+        ORDER BY yearmonth
+    `)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var results []MonthOption
+    for rows.Next() {
+        var yearMonth string
+        if err := rows.Scan(&yearMonth); err != nil {
+            return nil, err
+        }
+
+        // Convert e.g. "2023-09" -> "September 2023" for the label
+        label := yearMonth
+        if t, parseErr := time.Parse("2006-01", yearMonth); parseErr == nil {
+            label = t.Format("January 2006")
+        }
+
+        results = append(results, MonthOption{
+            YearMonth: yearMonth,
+            Label:     label,
+        })
+    }
+    return results, nil
 }
 

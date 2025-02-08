@@ -19,7 +19,7 @@ def get_image_description(input_file):
 
 input_csv = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
 
-df = dataframe.load_dataframe(input_csv)
+df = dataframe.from_csv(input_csv)
 df = dataframe.initialise_dataframe(df)
 image = attachments.get_all_image_attachments(df)
 
