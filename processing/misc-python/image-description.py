@@ -1,20 +1,5 @@
 import ollama
-from utils import dataframe
-
-def get_all_image_attachments(df):
-    # get all rows that are image attachments
-    # that don't already have a transcript written to them
-    attachment_mask = df["type"] == "ATTACHMENT"
-    #TODO: need to update this to handle more image types
-    image_attachment_mask = df["attachment_type"] == "PHOTO"
-
-    try:
-        transcript_mask = df["image_description"].isnull() == True
-        return df.loc[attachment_mask & image_attachment_mask & transcript_mask]
-    # this means there's no "image_transcript" column yet
-    # in that case, just return all the image attachments
-    except KeyError:
-        return df.loc[attachment_mask & image_attachment_mask]
+from utils import dataframe, attachments
 
 def get_image_description(input_file):
     print(f"Describing {input_file}")
@@ -36,7 +21,7 @@ input_csv = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
 
 df = dataframe.load_dataframe(input_csv)
 df = dataframe.initialise_dataframe(df)
-image = get_all_image_attachments(df)
+image = attachments.get_all_image_attachments(df)
 
 print(f"Processing {len(image)} image files")
 

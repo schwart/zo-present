@@ -38,3 +38,6 @@ clean-all:
 clean-md:
 	echo "Cleaning all .md and .html files"
 	rm -rf $(MARKDOWN_DIRECTORY)
+
+remaining:
+	python ./processing/misc-python/remaining-attachments-to-process.py

@@ -1,19 +1,5 @@
 import whisper
-from utils import dataframe
-
-def get_all_audio_attachments(df):
-    # get all rows that are audio attachments
-    # that don't already have a transcript written to them
-    attachment_mask = df["type"] == "ATTACHMENT"
-    audio_attachment_mask = df["attachment_type"] == "AUDIO"
-
-    try:
-        transcript_mask = df["audio_transcript"].isnull() == True
-        return df.loc[attachment_mask & audio_attachment_mask & transcript_mask]
-    # this means there's no "audio_transcript" column yet
-    # in that case, just return all the audio attachments
-    except KeyError:
-        return df.loc[attachment_mask & audio_attachment_mask]
+from utils import dataframe, attachments
 
 def get_transcript(input_file):
     print(f"Processing {input_file}")
@@ -29,7 +15,7 @@ input_csv = "/Users/conallmcginty/Desktop/zoe-present/outputs/chat.csv"
 
 df = dataframe.load_dataframe(input_csv)
 df = dataframe.initialise_dataframe(df)
-audio = get_all_audio_attachments(df)
+audio = attachments.get_all_audio_attachments(df)
 
 print(f"Processing {len(audio)} audio files")
 

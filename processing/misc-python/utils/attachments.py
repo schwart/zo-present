@@ -91,3 +91,33 @@ def message_for_attachment_type(row, human):
         return video_attachment(message)
 
     return message
+
+def get_all_audio_attachments(df):
+    # get all rows that are audio attachments
+    # that don't already have a transcript written to them
+    attachment_mask = df["type"] == "ATTACHMENT"
+    audio_attachment_mask = df["attachment_type"] == "AUDIO"
+
+    try:
+        transcript_mask = df["audio_transcript"].isnull() == True
+        return df.loc[attachment_mask & audio_attachment_mask & transcript_mask]
+    # this means there's no "audio_transcript" column yet
+    # in that case, just return all the audio attachments
+    except KeyError:
+        return df.loc[attachment_mask & audio_attachment_mask]
+
+def get_all_image_attachments(df):
+    # get all rows that are image attachments
+    # that don't already have a transcript written to them
+    attachment_mask = df["type"] == "ATTACHMENT"
+    #TODO: need to update this to handle more image types
+    image_attachment_mask = df["attachment_type"] == "PHOTO"
+
+    try:
+        transcript_mask = df["image_description"].isnull() == True
+        return df.loc[attachment_mask & image_attachment_mask & transcript_mask]
+    # this means there's no "image_transcript" column yet
+    # in that case, just return all the image attachments
+    except KeyError:
+        return df.loc[attachment_mask & image_attachment_mask]
+
