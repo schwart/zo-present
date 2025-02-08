@@ -1,5 +1,5 @@
 import os
-from datetime import date, timedelta
+from datetime import date
 from dateutil.relativedelta import relativedelta
 import calendar
 from utils import attachments
@@ -37,7 +37,10 @@ def format_markdown_message(row, human):
     if row["type"] == "ATTACHMENT":
         return attachments.message_for_attachment_type(row, human)
     else:
-        return row["message"]
+        if human:
+            return f"\n{row['message']}"
+        else:
+            return f"> Message Text: {row['message']}"
 
 def attachment_type_text(row):
     if row["type"] == "ATTACHMENT":
@@ -56,14 +59,23 @@ def create_markdown_entry(row, human):
     attachment_type = attachment_type_text(row)
     message = format_markdown_message(row, human)
     # build the text of the message
-    return (
-        f"{header}\n"
-        f"{author}\n"
-        f"{date_time}\n"
-        f"{message_type}\n"
-        f"{attachment_type}\n"
-        f"{message}\n\n"
-    )
+    if attachment_type:
+        return (
+            f"{header}\n"
+            f"{author}\n"
+            f"{date_time}\n"
+            f"{message_type}\n"
+            f"{attachment_type}\n"
+            f"{message}\n\n"
+        )
+    else:
+        return (
+            f"{header}\n"
+            f"{author}\n"
+            f"{date_time}\n"
+            f"{message_type}\n"
+            f"{message}\n\n"
+        )
 
 def create_dir(directory):
     if not os.path.exists(directory):
@@ -87,7 +99,7 @@ create_dir(output_root)
 
 df = dataframe.load_dataframe(input_file)
 df = dataframe.initialise_dataframe(df)
-dataframe.sanity_checks(df)
+dataframe.sanity_checks(df, input_file)
 
 start_year = 2023
 end_year = 2024

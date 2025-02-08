@@ -40,10 +40,22 @@ def initialise_dataframe(df):
     df.loc[df.apply(lambda row: row["type"] == "ATTACHMENT" and ".tiff" in row["message"], axis=1), "attachment_type"] = "TIFF_PHOTO"
     return df
 
-def sanity_checks(df):
+def sanity_checks(df, input_path):
     # check that we don't have any attachments with no attachment type assigned
-    all_attachments_with_no_type = df[(df["attachment_type"].isnull()) & (df["type"] == "ATTACHMENT")]["message"]
-    len_all_attachments_with_no_type = len(all_attachments_with_no_type)
-    print(f"Length of all attachments with no type: {len_all_attachments_with_no_type}")
+    attachments = df["type"] == "ATTACHMENT"
+    attachment_isnt_null = df["attachment_type"].isnull()
+    all_attachments_with_no_type = df[attachments & attachment_isnt_null]
+    attachment_paths = all_attachments_with_no_type["message"]
+    len_all_attachments_with_no_type = len(attachment_paths)
+    print(f"Number of attachments with no type: {len_all_attachments_with_no_type}")
     if len_all_attachments_with_no_type > 0:
-        raise Exception("There are some attachments with no type!")
+        for attachment in attachment_paths:
+            print(attachment)
+    response = input("Above are the attachments that we're going to skip, is that fine?")
+    if response.lower() == 'y':
+        # remove them from the data frame
+        # save the csv back
+        df.drop(all_attachments_with_no_type.index)
+        df.to_csv(input_path, index = False, date_format='%Y-%m-%dT%H:%M:%SZ')
+        return
+    raise Exception("There are some attachments with no type!")

@@ -57,7 +57,7 @@ def audio_attachment(row, human):
     if human:
         return f'{audio_transcript}\n\n{audio_element}'
     else:
-        return audio_element
+        return audio_transcript
 
 def video_attachment(message):
     filename = os.path.basename(message)
