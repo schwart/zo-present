@@ -31,6 +31,9 @@ $(HTML_MARKER): $(MARKDOWN_MARKER)
 
 html: $(HTML_MARKER)
 
+create_db:
+	python ./processing/misc-python/convert-csv-to-sqlite.py
+
 clean-all:
 	echo "Cleaning $(OUTPUT_DIRECTORY)"
 	rm -rf $(OUTPUT_DIRECTORY)/*

@@ -1,0 +1,49 @@
+package components
+
+import "strconv"
+import "fmt"
+import "conall/text-viewer/model"
+
+templ SeenButton(row model.Row) {
+	{{ buttonId := fmt.Sprintf("seen-btn-%d", row.Index) }}
+	if row.Status == "seen" {
+		<button 
+			disabled 
+			id={ buttonId }
+		>
+			Seen
+		</button>
+	} else {
+		<button 
+			id={ buttonId } 
+			onclick={ templ.JSFuncCall("markAsSeen", row.Index) }
+		>
+			Not Seen
+		</button>
+	}
+}
+
+
+templ Attachment (attachment model.Attachment) {
+	<p>This is an attachment: { strconv.Itoa(attachment.Index) }</p>
+	<p>File path: { attachment.FilePath }</p>
+	<p>Status: <span id={ fmt.Sprintf("status-%d", attachment.Index) }>{ attachment.Status }</span></p>
+}
+
+templ Text(message model.TextMessage) {
+	<p>This is a text: { strconv.Itoa(message.Index) }</p>
+	<p>Message: { message.Message }</p>
+	<p>Status: <span id={ fmt.Sprintf("status-%d", message.Index) }>{ message.Status }</span></p>
+}
+
+templ RowItem(row model.Row) {
+	<div style="margin-bottom: 20px; display: flex; flex-direction: column;">
+		 if row.Type == "MESSAGE" {
+		 	@Text(row.ToText())
+		 }
+		 if row.Type == "ATTACHMENT" {
+		 	@Attachment(row.ToAttachment())
+		 }
+		@SeenButton(row)
+	</div>
+}

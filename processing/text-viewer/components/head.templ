@@ -1,0 +1,42 @@
+package components
+
+templ Head() {
+	<head>
+	    <title>Text Viewer</title>
+	    <script>
+		// Called when the "Mark as Seen" button is clicked
+		function markAsSeen(rowId) {
+		    fetch('/mark-seen?id=' + rowId, {
+			method: 'POST'
+		    })
+		    .then(response => response.json())
+		    .then(data => {
+			if (data.success) {
+			    document.getElementById('status-' + rowId).textContent = 'seen';
+			    // Disable the button and change text
+			    const btn = document.getElementById('seen-btn-' + rowId);
+			    btn.disabled = true;
+			    btn.textContent = "Seen";
+			} else {
+			    alert('Failed to mark as seen: ' + data.error);
+			}
+		    })
+		    .catch(error => {
+			console.error('Error marking as seen:', error);
+			alert('Error marking as seen');
+		    });
+		}
+
+		// OnChange for the month picker. Redirect to the same page with "?month=YYYY-MM"
+		function onMonthChange(selectElem) {
+		    const monthVal = selectElem.value;
+		    // If empty, remove the ?month= param
+		    if (monthVal === "") {
+			window.location.href = "/";
+		    } else {
+			window.location.href = "/?month=" + monthVal;
+		    }
+		}
+	    </script>
+	</head>
+}

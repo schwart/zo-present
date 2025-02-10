@@ -1,0 +1,41 @@
+package components
+
+import "conall/text-viewer/model"
+
+templ MonthPicker(months []model.MonthOption, selectedMonth string) {
+	<!-- Month dropdown -->
+	<label for="month-picker"><strong>Filter by Month:</strong></label>
+	<select id="month-picker" name="month" onchange="onMonthChange(this)">
+		<!-- Default "all" option -->
+		<option value="">All</option>
+		for _, month := range months {
+			{{ 
+				selected := false
+				if selectedMonth == month.YearMonth {
+					selected = true
+				}
+			}}
+			<option value={ month.YearMonth } selected?={ selected }>
+				{ month.Label }
+			</option>
+		}
+	</select>
+}
+
+
+templ Html(rows []model.Row, months []model.MonthOption, selectedMonth string) {
+	<html>
+		@Head()
+		<body>
+			<h1>All the rows</h1>
+
+			@MonthPicker(months, selectedMonth)
+
+			<hr>
+
+			for _, row := range rows {
+				@RowItem(row)
+			}
+		</body>
+	</html>
+}
